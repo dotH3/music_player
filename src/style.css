@@ -1,0 +1,269 @@
+@import 'tailwindcss';
+
+/* ---- App base ---- */
+:root {
+  color-scheme: dark;
+  --bleed-1: #1a1a22;
+  --bleed-2: #0b0b0f;
+  --ink: #f5f5f7;
+  --ink-soft: rgba(245, 245, 247, 0.62);
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  background: #0b0b0f;
+  color: var(--ink);
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+#app {
+  height: 100dvh;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Respect notches / gesture bars */
+.safe-t {
+  padding-top: max(env(safe-area-inset-top), 0.75rem);
+}
+.safe-b {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.75rem);
+}
+
+/* ---- The cover-bleed background ---- *
+ * Two color stops pulled from the album art bleed across the whole screen.
+ * A subtle grain + vignette keep it from looking flat. */
+.bleed {
+  background:
+    radial-gradient(120% 80% at 50% -10%, var(--bleed-1) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bleed-1) 0%, var(--bleed-2) 70%, #08080b 100%);
+  transition: background 900ms ease;
+}
+.bleed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(140% 120% at 50% 30%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+}
+
+/* Grain overlay (tiny inline noise) */
+.grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- Cover art presentation ---- */
+.cover-shadow {
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    0 24px 60px -12px rgba(0, 0, 0, 0.6);
+}
+
+/* Album grid cards lift slightly on press */
+.album-card {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.album-card:active {
+  transform: scale(0.96);
+}
+
+/* ---- Progress / range ---- */
+input[type='range'].seek {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+input[type='range'].seek::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    var(--ink) var(--p, 0%),
+    rgba(255, 255, 255, 0.22) var(--p, 0%)
+  );
+}
+input[type='range'].seek::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  margin-top: -5px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--ink);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+input[type='range'].seek::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+}
+input[type='range'].seek::-moz-range-thumb {
+  border: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+/* Spinning hint for the loading state */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Fade-up entrance for views */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.fade-up {
+  animation: fadeUp 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---- Track-change flourish (fires every time the song advances) ---- */
+@keyframes songIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+.song-in {
+  animation: songIn 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* The newly-active row in the track list briefly lights up. */
+@keyframes rowIn {
+  0% {
+    background-color: rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    background-color: rgba(255, 255, 255, 0.08);
+  }
+}
+.row-in {
+  animation: rowIn 650ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .song-in,
+  .row-in {
+    animation: none;
+  }
+}
+
+/* ---- Vinyl cover-flow ---- *
+ * Horizontal, snap-centered carousel. Each cover is rotated in 3D by JS based
+ * on its distance to the center; a record disc peeks out behind the focused
+ * cover. The visual depth lives here; the math lives in VinylFlow.tsx. */
+.cf-track {
+  --cf-w: min(64vw, 300px);
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  padding-inline: calc(50% - var(--cf-w) / 2);
+  -webkit-overflow-scrolling: touch;
+}
+.cf-item {
+  flex: 0 0 var(--cf-w);
+  height: 100%;
+  display: grid;
+  place-items: center;
+  scroll-snap-align: center;
+  perspective: 1000px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.cf-cover {
+  position: relative;
+  width: var(--cf-w);
+  aspect-ratio: 1;
+  border-radius: 12px;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+.cf-art {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+/* The record sliding out behind the cover (transform/opacity set inline). */
+.cf-disc {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+.cf-disc-face {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.16) 0 7%, transparent 8%),
+    repeating-radial-gradient(circle at 50% 50%, #0a0a0c 0 2px, #18181b 2px 4px),
+    radial-gradient(circle at 50% 50%, #202023 0 58%, #050506 100%);
+  box-shadow: 0 12px 34px -10px rgba(0, 0, 0, 0.75);
+  animation: vinylSpin 5s linear infinite;
+}
+@keyframes vinylSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cf-disc-face {
+    animation: none;
+  }
+}
+
+/* Search field: drop the browser's native clear/decoration (we draw our own) */
+input[type='search']::-webkit-search-cancel-button,
+input[type='search']::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Hide scrollbars but keep scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

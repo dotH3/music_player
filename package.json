@@ -1,0 +1,30 @@
+{
+  "name": "cover-bleed",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Reproductor de albums con estetica cover-bleed (PWA)",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host",
+    "typecheck": "tsc --noEmit",
+    "icons": "node scripts/gen-icons.js"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.7",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.7.0",
+    "sharp": "^0.34.1",
+    "tailwindcss": "^4.1.7",
+    "typescript": "^6.0.3",
+    "vite": "^6.3.5"
+  },
+  "dependencies": {
+    "lucide-react": "^1.17.0",
+    "music-metadata": "^11.2.1",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
+  }
+}
