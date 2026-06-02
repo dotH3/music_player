@@ -183,8 +183,8 @@ input[type='range'].seek::-moz-range-thumb {
 
 /* ---- Vinyl cover-flow ---- *
  * Horizontal, snap-centered carousel. Each cover is rotated in 3D by JS based
- * on its distance to the center; a record disc peeks out behind the focused
- * cover. The visual depth lives here; the math lives in VinylFlow.tsx. */
+ * on its distance to the center. The visual depth lives here; the math lives in
+ * VinylFlow.tsx. */
 .cf-track {
   --cf-w: min(64vw, 300px);
   display: flex;
@@ -224,31 +224,58 @@ input[type='range'].seek::-moz-range-thumb {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.05);
 }
-/* The record sliding out behind the cover (transform/opacity set inline). */
-.cf-disc {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
+
+/* ---- Vinyl scrubber strip ---- *
+ * The whole catalog squeezed into one draggable line of cover slivers: first
+ * album on the left, last on the right. The active album's sliver lifts and
+ * brightens; the rest dim so the playhead reads at a glance. Dragging is wired
+ * up in VinylFlow.tsx (pointer events → cover-flow scroll). */
+.cf-scrub {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 2.75rem;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  touch-action: none; /* let us own the horizontal drag */
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: ew-resize;
 }
-.cf-disc-face {
+.cf-scrub-tile {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 100%;
+  opacity: 0.45;
+  transform: scaleY(0.78);
+  transform-origin: bottom;
+  transition: opacity 140ms ease, transform 140ms ease, filter 140ms ease;
+  filter: saturate(0.85);
+}
+.cf-scrub-tile img,
+.cf-scrub-blank {
+  display: block;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.16) 0 7%, transparent 8%),
-    repeating-radial-gradient(circle at 50% 50%, #0a0a0c 0 2px, #18181b 2px 4px),
-    radial-gradient(circle at 50% 50%, #202023 0 58%, #050506 100%);
-  box-shadow: 0 12px 34px -10px rgba(0, 0, 0, 0.75);
-  animation: vinylSpin 5s linear infinite;
+  object-fit: cover;
+  pointer-events: none;
 }
-@keyframes vinylSpin {
-  to {
-    transform: rotate(360deg);
-  }
+.cf-scrub-blank {
+  background: rgba(255, 255, 255, 0.08);
+}
+.cf-scrub-tile.is-active {
+  opacity: 1;
+  transform: scaleY(1);
+  filter: saturate(1.1) brightness(1.08);
+  box-shadow: 0 0 0 2px var(--ink);
+  border-radius: 4px;
+  position: relative;
+  z-index: 1;
 }
 @media (prefers-reduced-motion: reduce) {
-  .cf-disc-face {
-    animation: none;
+  .cf-scrub-tile {
+    transition: none;
   }
 }
 
